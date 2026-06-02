@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>네이버 뉴스 검색</title>
+  <meta name="description" content="네이버 뉴스를 키워드로 검색하는 서비스" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b0f1c;
+      --bg2: #131929;
+      --card: #161e30;
+      --card-h: #1c2540;
+      --green: #03c75a;
+      --green-dim: rgba(3,199,90,.13);
+      --green-glow: rgba(3,199,90,.35);
+      --t1: #eef2ff;
+      --t2: #8b9ab5;
+      --t3: #4e5f7a;
+      --border: rgba(255,255,255,.07);
+      --border-f: rgba(3,199,90,.45);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 15% 10%, rgba(3,199,90,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 85% 85%, rgba(99,102,241,.07) 0%, transparent 60%);
+    }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(11,15,28,.85);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg,#03c75a,#009f46);
+      border-radius: 9px; display: flex; align-items: center;
+      justify-content: center; font-size: 17px;
+      box-shadow: 0 0 14px var(--green-glow);
+    }
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .logo-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: .8px;
+      background: var(--green-dim); color: var(--green);
+      border: 1px solid rgba(3,199,90,.28); padding: 2px 8px;
+      border-radius: 20px; text-transform: uppercase;
+    }
+
+    /* Hero */
+    .hero { text-align: center; padding: 68px 20px 36px; }
+    .live-tag {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--green-dim); border: 1px solid rgba(3,199,90,.22);
+      color: var(--green); font-size: 11px; font-weight: 700;
+      padding: 5px 14px; border-radius: 20px;
+      margin-bottom: 24px; letter-spacing: .9px; text-transform: uppercase;
+    }
+    .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 1.8s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
+
+    h1 {
+      font-size: clamp(30px,5vw,50px); font-weight: 700;
+      line-height: 1.2; letter-spacing: -1px; margin-bottom: 12px;
+      background: linear-gradient(135deg,#eef2ff 0%,#8b9ab5 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg,#03c75a,#00e676);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub { font-size: 15px; color: var(--t2); line-height: 1.65; margin-bottom: 38px; }
+
+    /* Search */
+    .search-wrap { max-width: 700px; margin: 0 auto; padding: 0 16px; }
+    .search-box {
+      display: flex; align-items: center;
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 15px; overflow: hidden;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .search-box:focus-within {
+      border-color: var(--border-f);
+      box-shadow: 0 0 0 4px rgba(3,199,90,.07), 0 0 28px rgba(3,199,90,.12);
+    }
+    .s-icon { padding: 0 14px 0 18px; color: var(--t3); font-size: 19px; transition: color .25s; }
+    .search-box:focus-within .s-icon { color: var(--green); }
+    #q {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: inherit; font-size: 16px; color: var(--t1);
+      padding: 17px 0; caret-color: var(--green);
+    }
+    #q::placeholder { color: var(--t3); }
+    #sortSel {
+      background: rgba(255,255,255,.05); border: 1px solid var(--border);
+      color: var(--t2); font-family: inherit; font-size: 13px;
+      padding: 6px 9px; border-radius: 7px; outline: none; cursor: pointer; margin-right: 8px;
+    }
+    #sortSel option { background: var(--bg2); }
+    #searchBtn {
+      margin: 9px; padding: 10px 22px;
+      background: linear-gradient(135deg,#03c75a,#00a846);
+      color: #fff; border: none; border-radius: 10px;
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      box-shadow: 0 2px 14px rgba(3,199,90,.3); transition: all .2s;
+    }
+    #searchBtn:hover { background: linear-gradient(135deg,#05db63,#03c75a); transform: translateY(-1px); box-shadow: 0 4px 22px rgba(3,199,90,.5); }
+    #searchBtn:active { transform: translateY(0); }
+    #searchBtn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .chips { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; justify-content: center; }
+    .chip-label { font-size: 12px; color: var(--t3); }
+    .chip {
+      background: rgba(255,255,255,.05); border: 1px solid var(--border);
+      color: var(--t2); font-size: 13px; font-family: inherit;
+      padding: 5px 14px; border-radius: 20px; cursor: pointer; transition: all .2s;
+    }
+    .chip:hover { background: var(--green-dim); border-color: rgba(3,199,90,.3); color: var(--green); transform: translateY(-1px); }
+
+    /* Main */
+    main { max-width: 880px; margin: 0 auto; padding: 36px 16px 80px; }
+
+    .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; min-height: 24px; }
+    .status-row.hidden { display: none; }
+    .res-count { font-size: 14px; color: var(--t2); }
+    .res-count strong { color: var(--green); font-weight: 600; }
+    .res-meta { font-size: 12px; color: var(--t3); }
+
+    /* Skeleton */
+    .skeletons { display: none; flex-direction: column; gap: 14px; }
+    .skeletons.on { display: flex; }
+    .sk-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+    .sk-line {
+      background: linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%);
+      background-size: 200% 100%; animation: shimmer 1.6s infinite;
+      border-radius: 5px; height: 13px; margin-bottom: 10px;
+    }
+    .sk-line.t { height: 19px; width: 70%; margin-bottom: 13px; }
+    .sk-line.l { width: 100%; } .sk-line.m { width: 82%; } .sk-line.s { width: 38%; height: 11px; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* Cards */
+    #results { display: flex; flex-direction: column; gap: 14px; }
+    .n-card {
+      display: block; background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 26px; text-decoration: none;
+      transition: all .22s; position: relative; overflow: hidden;
+      animation: fadeUp .35s ease both;
+    }
+    .n-card::before {
+      content:''; position: absolute; inset: 0;
+      background: linear-gradient(135deg,rgba(3,199,90,.04),transparent);
+      opacity: 0; transition: opacity .22s;
+    }
+    .n-card:hover { background: var(--card-h); border-color: rgba(3,199,90,.22); transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,.4), 0 0 18px rgba(3,199,90,.07); }
+    .n-card:hover::before { opacity: 1; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .c-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 9px; }
+    .n-title { font-size: 16px; font-weight: 600; color: var(--t1); line-height: 1.45; letter-spacing: -.15px; flex: 1; }
+    .n-title b { color: var(--green); font-weight: 700; }
+    .ext-ic {
+      flex-shrink: 0; width: 26px; height: 26px;
+      background: rgba(255,255,255,.05); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--t3); transition: all .2s; margin-top: 1px;
+    }
+    .n-card:hover .ext-ic { background: var(--green-dim); color: var(--green); }
+    .n-desc { font-size: 13.5px; color: var(--t2); line-height: 1.65; margin-bottom: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .n-desc b { color: var(--t1); font-weight: 500; }
+    .c-foot { display: flex; align-items: center; justify-content: space-between; }
+    .n-src { display: flex; align-items: center; gap: 7px; }
+    .src-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px rgba(3,199,90,.5); }
+    .src-name { font-size: 12px; font-weight: 600; color: var(--t3); }
+    .n-date { font-size: 12px; color: var(--t3); }
+
+    .state { text-align: center; padding: 64px 20px; }
+    .state-ic { font-size: 48px; margin-bottom: 18px; }
+    .state h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .state p { font-size: 14px; color: var(--t2); line-height: 1.6; max-width: 360px; margin: 0 auto; }
+    .err-box {
+      margin: 14px auto 0; max-width: 460px;
+      background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.22);
+      border-radius: 10px; padding: 11px 15px;
+      font-size: 13px; color: #f87171; text-align: left;
+    }
+
+    .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 36px; }
+    .pager.hidden { display: none; }
+    .pg-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--t2);
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      padding: 9px 18px; border-radius: 9px; cursor: pointer; transition: all .2s;
+    }
+    .pg-btn:hover:not(:disabled) { background: var(--green-dim); border-color: rgba(3,199,90,.3); color: var(--green); }
+    .pg-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .pg-info { font-size: 13px; color: var(--t3); padding: 0 6px; }
+
+    footer { text-align: center; padding: 22px; border-top: 1px solid var(--border); font-size: 12px; color: var(--t3); line-height: 1.7; }
+    footer a { color: var(--green); text-decoration: none; }
+
+    @media (max-width: 560px) {
+      .hero { padding: 44px 14px 28px; }
+      #sortSel { display: none; }
+      .n-card { padding: 16px 18px; }
+      .n-title { font-size: 15px; }
+      header { padding: 11px 14px; }
+    }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">📰</div>
+  <span class="logo-text">뉴스서치</span>
+  <span class="logo-badge">NAVER</span>
+</header>
+
+<section class="hero">
+  <div class="live-tag"><span class="live-dot"></span>실시간 뉴스</div>
+  <h1>원하는 뉴스를<br><em>바로 찾아보세요</em></h1>
+  <p class="hero-sub">네이버 공식 뉴스 API로 최신 기사를 검색하세요</p>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="s-icon">🔍</span>
+      <input type="text" id="q" placeholder="검색어 입력 (예: 인공지능, 삼성, 날씨)" autocomplete="off" aria-label="검색어" />
+      <select id="sortSel" aria-label="정렬">
+        <option value="date">최신순</option>
+        <option value="sim">관련순</option>
+      </select>
+      <button id="searchBtn">검색</button>
+    </div>
+    <div class="chips">
+      <span class="chip-label">인기:</span>
+      <button class="chip" data-kw="인공지능">🤖 인공지능</button>
+      <button class="chip" data-kw="코스피">📈 코스피</button>
+      <button class="chip" data-kw="날씨">🌤 날씨</button>
+      <button class="chip" data-kw="부동산">🏠 부동산</button>
+      <button class="chip" data-kw="K리그">⚽ K리그</button>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="status-row hidden" id="statusRow">
+    <span class="res-count" id="resCnt"></span>
+    <span class="res-meta" id="resMeta"></span>
+  </div>
+
+  <div class="skeletons" id="skel">
+    <div class="sk-card"><div class="sk-line t"></div><div class="sk-line l"></div><div class="sk-line m"></div><div class="sk-line s"></div></div>
+    <div class="sk-card"><div class="sk-line t"></div><div class="sk-line l"></div><div class="sk-line m"></div><div class="sk-line s"></div></div>
+    <div class="sk-card"><div class="sk-line t"></div><div class="sk-line l"></div><div class="sk-line m"></div><div class="sk-line s"></div></div>
+  </div>
+
+  <div id="results" role="list"></div>
+
+  <div class="pager hidden" id="pager">
+    <button class="pg-btn" id="prevBtn">← 이전</button>
+    <span class="pg-info" id="pgInfo"></span>
+    <button class="pg-btn" id="nextBtn">다음 →</button>
+  </div>
+</main>
+
+<footer>
+  <p>뉴스 데이터: <a href="https://developers.naver.com" target="_blank" rel="noopener">네이버 검색 API</a> | 저작권은 각 언론사에 있습니다.</p>
+</footer>
+
+<script>
+(function () {
+  const API = '/api/news';   // 로컬 & Vercel 둘 다 동일
+  const PER = 10;
+
+  let curQuery = '';
+  let curPage  = 1;
+  let total    = 0;
+  let loading  = false;
+
+  const qEl      = document.getElementById('q');
+  const sortSel  = document.getElementById('sortSel');
+  const btn      = document.getElementById('searchBtn');
+  const skel     = document.getElementById('skel');
+  const results  = document.getElementById('results');
+  const statusRow= document.getElementById('statusRow');
+  const resCnt   = document.getElementById('resCnt');
+  const resMeta  = document.getElementById('resMeta');
+  const pager    = document.getElementById('pager');
+  const prevBtn  = document.getElementById('prevBtn');
+  const nextBtn  = document.getElementById('nextBtn');
+  const pgInfo   = document.getElementById('pgInfo');
+
+  btn.addEventListener('click', kick);
+  qEl.addEventListener('keydown', e => e.key === 'Enter' && kick());
+  document.querySelectorAll('.chip').forEach(c =>
+    c.addEventListener('click', () => { qEl.value = c.dataset.kw; kick(); })
+  );
+  prevBtn.addEventListener('click', () => search(curQuery, curPage - 1));
+  nextBtn.addEventListener('click', () => search(curQuery, curPage + 1));
+  sortSel.addEventListener('change', () => { if (curQuery) search(curQuery, 1); });
+
+  function kick() {
+    const q = qEl.value.trim();
+    if (!q) { shake(); return; }
+    search(q, 1);
+  }
+
+  async function search(query, page) {
+    if (loading) return;
+    loading = true;
+    curQuery = query;
+    curPage  = page;
+
+    showSkel();
+
+    try {
+      const start = (page - 1) * PER + 1;
+      const params = new URLSearchParams({ query, display: PER, start, sort: sortSel.value });
+      const res  = await fetch(`${API}?${params}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || '오류 발생', data.detail || '');
+        return;
+      }
+
+      total = data.total || 0;
+      render(data.items || [], query, page);
+
+    } catch (err) {
+      showError('서버에 연결할 수 없습니다.', err.message);
+    } finally {
+      hideSkel();
+      loading = false;
+    }
+  }
+
+  function render(items, query, page) {
+    results.innerHTML = '';
+
+    if (!items.length) { showEmpty(query); return; }
+
+    statusRow.classList.remove('hidden');
+    resCnt.innerHTML = `<strong>${total.toLocaleString()}건</strong>의 뉴스`;
+    resMeta.textContent = `"${query}" 검색 결과`;
+
+    items.forEach((item, i) => results.appendChild(buildCard(item, i, query)));
+
+    const maxPage = Math.ceil(Math.min(total, 1000) / PER);
+    if (maxPage > 1) {
+      pager.classList.remove('hidden');
+      pgInfo.textContent = `${page} / ${maxPage}`;
+      prevBtn.disabled = page <= 1;
+      nextBtn.disabled = page >= maxPage;
+    } else {
+      pager.classList.add('hidden');
+    }
+
+    if (page === 1) document.querySelector('main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function buildCard(item, idx, query) {
+    const a = document.createElement('a');
+    a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.className = 'n-card'; a.setAttribute('role', 'listitem');
+    a.style.animationDelay = `${idx * 45}ms`;
+
+    const title = strip(item.title || '제목 없음');
+    const desc  = strip(item.description || '');
+    const src   = extractSrc(item.originallink || item.link);
+
+    a.innerHTML = `
+      <div class="c-head">
+        <h2 class="n-title">${hl(title, query)}</h2>
+        <div class="ext-ic">↗</div>
+      </div>
+      <p class="n-desc">${desc ? hl(desc, query) : '내용 미리보기를 제공하지 않는 기사입니다.'}</p>
+      <div class="c-foot">
+        <div class="n-src"><div class="src-dot"></div><span class="src-name">${src}</span></div>
+        <span class="n-date">${relTime(item.pubDate)}</span>
+      </div>`;
+    return a;
+  }
+
+  function strip(html) { const d = document.createElement('div'); d.innerHTML = html; return d.textContent || ''; }
+  function hl(text, q) {
+    if (!q) return text;
+    return text.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<b>$1</b>');
+  }
+  function relTime(s) {
+    if (!s) return '';
+    try {
+      const d = new Date(s), diff = Date.now() - d, m = Math.floor(diff/60000);
+      if (m < 1) return '방금 전';
+      if (m < 60) return `${m}분 전`;
+      const h = Math.floor(m/60);
+      if (h < 24) return `${h}시간 전`;
+      const day = Math.floor(h/24);
+      if (day < 7) return `${day}일 전`;
+      return d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+    } catch { return s; }
+  }
+  function extractSrc(url) {
+    try { return new URL(url).hostname.replace(/^www\./,'').replace(/\.(com|co\.kr|net|org|kr)$/,''); }
+    catch { return 'news'; }
+  }
+
+  function showSkel() { results.innerHTML=''; statusRow.classList.add('hidden'); pager.classList.add('hidden'); skel.classList.add('on'); btn.textContent='검색 중…'; btn.disabled=true; }
+  function hideSkel() { skel.classList.remove('on'); btn.textContent='검색'; btn.disabled=false; }
+  function showEmpty(q) { statusRow.classList.add('hidden'); pager.classList.add('hidden'); results.innerHTML=`<div class="state"><div class="state-ic">🔎</div><h2>"${q}"에 대한 결과 없음</h2><p>다른 검색어를 시도해보세요.</p></div>`; }
+  function showError(msg, detail) { statusRow.classList.add('hidden'); pager.classList.add('hidden'); results.innerHTML=`<div class="state"><div class="state-ic">⚠️</div><h2>${msg}</h2>${detail?`<div class="err-box">${detail}</div>`:''}</div>`; }
+  function shake() { const b=document.querySelector('.search-box'); b.style.animation='none'; b.offsetHeight; b.style.animation='shake .4s ease'; b.addEventListener('animationend',()=>b.style.animation='',{once:true}); }
+})();
+</script>
+
+</body>
+</html>
